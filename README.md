@@ -350,11 +350,429 @@ We can quickly ignore SQL code by putting the comment syntax before the SQL code
 
 ## Section 4: Inserting Data
 
+##### `Originally Started & Completed: 04/28/2023`
+
+### Section Introduction
+
+Last section we saw how to make databases and how to create tables. But these tables were empty; they had no data! In this section we will explore tools to insert data into these tables.
+
+We will also explore retrieving the data we insert.
+
+### INSERT: The Basics
+
+How do we insert data into these empty tables we created? We use an **INSERT** statement:
+
+```sql
+INSERT INTO <tablename> (<column1_name>, <column2_name>)
+VALUES (<value1>, <value2>)
+```
+
+**Example**:
+
+```sql
+INSERT INTO cats(name, age)
+VALUES ('Jetson', 7);
+```
+
+We specify the columns we want to insert, and in what order the data is to be expected. We then provide the values to those columns, following the same order we provided.
+
+### Code Challenge
+
+Re-create the cats table:
+
+```sql
+CREATE TABLE cats (
+   name VARCHAR(50),
+   age INT
+);
+```
+
+Insert a cat:
+
+```sql
+INSERT INTO cats (name, age)
+VALUES ('Blue Steele', 5);
+```
+
+And another:
+
+```sql
+INSERT INTO cats (name, age)
+VALUES ('Jenkins', 7);
+```
+
+We could have also added multiple cats at the same time:
+
+```sql
+INSERT INTO cats (name, age)
+VALUES ('Tonks', 11), ('Wedge', 10);
+```
+
+### A Quick Preview of SELECT
+
+So, we have allegedly inserted data into our cats table. But how do we know it worked as we intended?
+
+```sql
+SELECT * FROM <table>
+```
+
+This retrieves _all_ data we have from a table.
+
+### Code Challenge
+
+To view all rows in our cats table:
+
+```sql
+SELECT * FROM cats;
+```
+
+### Multi-Inserts
+
+The order we insert our column/value pairs matters! If we tell SQL our name column comes first, we must provide the name first in the values list. However, _between INSERT_ commands we _can_ mix the order up:
+
+```sql
+-- Let's put name in before age:
+INSERT INTO cats (name, age)
+VALUES ('Patrick', 4);
+
+-- Now let's add another cat, its age before name:
+INSERT INTO cats (age, name)
+VALUES (5, 'Spongebob');
+```
+
+Therefore, we do not need to know or memorize a particular order of columns in our table, as the ordering _between_ separate inserts does not matter.
+
+If we mismatch column/value pairs, we will be greeted with an error if the data types conflict!
+
+We can also do **multiple inserts**:
+
+```sql
+INSERT INTO cats (name, age)
+VALUES ('Meatball', 5), ('Turkey', 1), ('Potato Face', 15);
+```
+
+### Code Challenge
+
+-- Single insert (switching order of name and age):
+
+```sql
+INSERT INTO cats (age, name)
+VALUES (2, 'Beth');
+```
+
+-- Multiple Insert:
+
+```sql
+INSERT INTO cats (name, age)
+VALUES
+   ('Meatball', 5),
+   ('Turkey', 1),
+   ('Potato Face', 15);
+```
+
+### INSERT: Exercise
+
+**Exercise**
+
+Create a _people_ table:
+
+- first_name - 20 char limit
+- last_name - 20 char limit
+- age - int
+
+Insert your first person:
+
+| first_name | last_name | age |
+| ---------- | --------- | --- |
+| 'Tina'     | 'Belcher' | 13  |
+
+Insert your second person:
+
+| first_name | last_name | age |
+| ---------- | --------- | --- |
+| 'Bob'      | 'Belcher' | 42  |
+
+Then insert multiple:
+
+| first_name | last_name    | age |
+| ---------- | ------------ | --- |
+| 'Linda'    | 'Belcher'    | 45  |
+| 'Philip'   | 'Frond'      | 38  |
+| 'Calvin'   | 'Fischoeder' | 70  |
+
+**Solution**
+
+1.  ```sql
+    CREATE TABLE people (
+      first_name VARCHAR(20),
+      last_name VARCHAR(20),
+      age INT
+    );
+    ```
+
+2.  ```sql
+    INSERT INTO people (first_name, last_name, age)
+    VALUES ('Tina', 'Belcher', 13);
+    ```
+
+3.  ```sql
+    INSERT INTO people (age, last_name, first_name)
+    VALUES (42, 'Belcher', 'Bob');
+    ```
+
+4.  ```sql
+    INSERT INTO people (first_name, last_name, age)
+    VALUES
+      ('Linda', 'Belcher', 45),
+      ('Philip', 'Frond', 38),
+      ('Calvin', 'Fischoeder', 70);
+    ```
+
+Remember, after we create the table we can check it with:
+
+```sql
+DESC people;
+```
+
+And we can see if our data was correctly inserted with:
+
+```sql
+SELECT * FROM people;
+```
+
+Finally, since we do not want this table to persist, we can delete it:
+
+```sql
+DROP TABLE people;
+```
+
+And verify it was deleted:
+
+```sql
+SHOW TABLES;
+```
+
+### Working With NOT NULL
+
+Remember when we ran `DESC <table>` and saw a column _NULL_ with a Yes or No value? Here is what the output may look like:
+
+| Field | Type        | Null | Key | Default | Extra |
+| ----- | ----------- | ---- | --- | ------- | ----- |
+| name  | varchar(20) | YES  |     | NULL    |       |
+| age   | int         | YES  |     | NULL    |       |
+
+NULL is a value in SQL that means _no value_ -- it means lack of a value. The value is unknown! The 'Yes' and 'No' values we saw tell us whether we are allowed to have a NULL value in that column.
+
+Sometimes we may want intentionally empty (NULL) columns. Sometimes we don't. In the cases where we do not, we set up this constraint when creating our table:
+
+```sql
+CREATE TABLE cats (
+  name VARCHAR(20) NOT NULL,
+  age INT NOT NULL
+)
+```
+
+Now we are not allowed to insert a cat that does not have a name or age specified.
+
+### Sidenote: Quotes in MySQL
+
+When we are working with text in MySQL, we provide those values in quotes. While MySQL allow both single and double quotes for strings, other flavors of SQL do not. For this reason, we conventionally prefer the use of single quotes.
+
+But what if we have a literal quote / apostrophe within our string? How would we work with that? We need to **escape** that apostrophe with a `\`:
+
+```sql
+INSERT INTO shops (name)
+VALUES ('Mario\'s Pizza');
+```
+
+### Adding DEFAULT Values
+
+Going back to the output of our `DESC <table>` command, there was a `Default` column. This describes the default value of a column. By default there is no default! But we can change this:
+
+```sql
+CREATE table cats (
+  name VARCHAR(50) DEFAULT 'Kitty Cat',
+  age INT DEFAULT 99
+);
+```
+
+Isn't setting `NOT NULL` _and_ `DEFAULT` redundant? After all, if we will be given a default value even when providing none, nothing will ever be `NULL`, right?
+
+Nope! We can still manually set things to `NULL` if we do not specify `NOT NULL`:
+
+```sql
+INSERT INTO cats (name, age)
+VALUES (NULL, 3)
+```
+
+### Code Challenge
+
+Define a table with a DEFAULT name specified:
+
+```sql
+CREATE TABLE cats  (
+    name VARCHAR(20) DEFAULT 'no name provided',
+    age INT DEFAULT 99
+);
+```
+
+Notice the change when you describe the table:
+
+```sql
+DESC cats;
+```
+
+Insert a cat without a name:
+
+```sql
+INSERT INTO cats (age) VALUES(13);
+```
+
+Or a nameless, ageless cat:
+
+```sql
+INSERT INTO cats () VALUES();
+```
+
+Combine NOT NULL and DEFAULT:
+
+```sql
+CREATE TABLE cats4  (
+    name VARCHAR(20) NOT NULL DEFAULT 'unnamed',
+    age INT NOT NULL DEFAULT 99
+);
+```
+
+### Introducing Primary Keys
+
+Once again, revisiting our output when we run `DESC <table>`, we saw a `Key` column, which were all empty in our case. What's up with that?
+
+We need to be able to distinguish rows easily from one another, especially when they are allowed to store identical data (such as names). We can give unique IDs to each row. We _could_ just add an "id" column into our table, but what would stop us from giving multiple rows the same ID? Then they would not truly be identifiable as unique.
+
+Instead, we make use of a **Primary Key**. A primary key is a _unique identifier_ for each row. We can add on the `PRIMARY KEY` constraint when creating our table:
+
+```sql
+CREATE TABLE unique_cats (
+  cat_id INT PRIMARY KEY,
+  name VARCHAR(100),
+  age INT
+);
+```
+
+Now, when we run `DESC unique_cats`, we get "PRI" under our "Key" column. We _must_ provide an ID for each cat we insert, and each ID _must_ be unique!
+
+However, keeping track of what IDs we have used already, or which to use next, can be rather tedious. We will learn a better way to use the power of primary keys shortly.
+
+Note: Using `NOT NULL` with `PRIMARY KEY` is redundant! By nature, primary keys can never be null.
+
+### Code Challenge
+
+One way of specifying a PRIMARY KEY
+
+```sql
+CREATE TABLE unique_cats (
+	cat_id INT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    age INT NOT NULL
+);
+```
+
+Another option:
+
+```sql
+CREATE TABLE unique_cats2 (
+	cat_id INT,
+    name VARCHAR(100) NOT NULL,
+    age INT NOT NULL,
+    PRIMARY KEY (cat_id)
+);
+```
+
+In the second option, we report the primary key later on -- not directly when the column that serves as the primary key is being defined.
+
+### Working With AUTO_INCREMENT
+
+To avoid the headache of manually assigning unique IDs to our primary key columns, we can make use of **AUTO_INCREMENT**.
+Using this keyword will automatically increment (starting at 1, although we can change that default) our IDs.
+
+We will be combining `AUTO_INCREMENT` with `PRIMARY KEY` all the time:
+
+```sql
+CREATE TABLE <table> (
+  id INTO AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100)
+);
+```
+
+Now we do not manually have to specify that we will be inserting into the primary key column, nor do we manually provide a value for that column:
+
+```sql
+INSERT INTO <table> (name)
+VALUES ('Matthew');
+```
+
+### Code Challenge
+
+AUTO_INCREMENT:
+
+```sql
+CREATE TABLE unique_cats3 (
+    cat_id INT AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    age INT NOT NULL,
+    PRIMARY KEY (cat_id)
+);
+```
+
+We could have also written:
+
+```sql
+CREATE TABLE unique_cats3 (
+  cat_id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  age INT NOT NULL
+);
+```
+
+### Create Table Insert Exercise
+
+**Exercise**
+
+Define an Employees table, with the following fields:
+
+- id: number (automatically increments) and primary key
+- last_name: text, mandatory
+- first_name: text, mandatory
+- middle_name: text, not mandatory
+- age: number, mandatory
+- current_status: text, mandatory, defaults to 'employed'
+
+**Solution**
+
+```sql
+CREATE TABLE employees (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  last_name VARCHAR(100) NOT NULL,
+  first_name VARCHAR(100) NOT NULL,
+  middle_name VARCHAR(100),
+  age INT NOT NULL,
+  current_status VARCHAR(100) NOT NULL DEFAULT 'employed'
+);
+```
+
 ## Section 5: CRUD Basics
 
 ## Section 6: CRUD Challenge
 
 ## Section 7: String Functions
+
+```
+
+```
+
+```
+
+```
 
 ```
 
