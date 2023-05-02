@@ -970,3 +970,166 @@ WHERE age = cat_id;
 ```sql
 DELETE FROM cats;
 ```
+
+## Section 6: CRUD Challenge
+
+### Section Introduction
+
+This section will be purely exercises to help reinforce SQL CRUD operations.
+
+### Introducing the CRUD Challenge
+
+We are spring cleaning! We have a surplus of shirts that we want to give away, so we want to create a shirt database. Let's do the following:
+
+1. Create a new database called _shirts_db_
+2. Create a new table called _shirts_
+3. It will have a shirt_id, article, color, size, and last_worn
+4. Insert the starting data (in a single line):
+
+   ```
+   ('t-shirt', 'white', 'S', 10),
+   ('t-shirt', 'green', 'S', 200),
+   ('polo shirt', 'black', 'M', 10),
+   ('tank top', 'blue', 'S', 50),
+   ('t-shirt', 'pink', 'S', 0),
+   ('polo shirt', 'red', 'M', 5),
+   ('tank top', 'white', 'S', 200),
+   ('tank top', 'blue', 'M', 15)
+   ```
+
+5. Add a new shirt: Purple polo shirt, size M, last worn 50 days ago
+6. Select all shirts, but only print out article and color
+7. Select all medium shirts, but print everything but shirt_id
+8. Update all polo shirts; change their size to L
+9. Update the shirt that was last worn 15 days ago to 0 days ago
+10. Update all white shirts; change size to 'XS' and color to 'off white'
+11. Delete all old shirts last worn exactly 200 days ago
+12. Delete all tank tops; our tastes have changed!
+13. Delete all shirts; oh no!
+14. Drop the entire shirts table; oh god, no!
+
+**Solution for CREATE Exercises**
+
+Create the database:
+
+```sql
+CREATE DATABASE shirts_db;
+```
+
+Let's see if it created properly:
+
+```sql
+SHOW databases;
+```
+
+Good! We see it in the list of databases; now let's interact with it:
+
+```sql
+USE shirts_db;
+```
+
+Okay, but are we actually interacting with the correct database? Let's see:
+
+```sql
+SELECT database();
+```
+
+Whew!
+
+Now create the shirts table:
+
+```sql
+CREATE TABLE shirts (
+  shirt_id INT PRIMARY KEY AUTO_INCREMENT,
+  article VARCHAR(50),
+  color VARCHAR(50),
+  size VARCHAR(5),
+  last_worn INT
+);
+```
+
+But did it actually get created? Let's look:
+
+```sql
+SHOW tables;
+```
+
+Okay, it exists. But let's see if the table looks how we envisioned:
+
+```sql
+DESC shirts;
+```
+
+And add some starter data:
+
+```sql
+INSERT INTO shirts (article, color, size, last_worn)
+VALUES ('t-shirt', 'white', 'S', 10),
+   ('t-shirt', 'green', 'S', 200),
+   ('polo shirt', 'black', 'M', 10),
+   ('tank top', 'blue', 'S', 50),
+   ('t-shirt', 'pink', 'S', 0),
+   ('polo shirt', 'red', 'M', 5),
+   ('tank top', 'white', 'S', 200),
+   ('tank top', 'blue', 'M', 15);
+```
+
+Finally, let's add that new purple shirt:
+
+```sql
+INSERT INTO shirts (article, color, size, last_worn)
+VALUES ('polo shirt', 'purple', 'M', 50);
+```
+
+**Solution for READ Exercises**
+
+```sql
+SELECT article, color
+FROM shirts;
+```
+
+```sql
+SELECT article, color, size, last_worn
+FROM shirts
+WHERE size = 'M';
+```
+
+**Solution for UPDATE Exercises**
+
+```sql
+UPDATE shirts
+SET size = 'L'
+WHERE article = 'polo shirt';
+```
+
+```sql
+UPDATE shirts
+SET last_worn = 0
+WHERE last_worn = 15;
+```
+
+```sql
+UPDATE shirts
+SET size = 'XS', color = 'off white'
+WHERE color = 'white';
+```
+
+**Solution for DELETE Exercises**
+
+```sql
+DELETE FROM shirts
+WHERE last_worn = 200;
+```
+
+```sql
+DELETE FROM shirts
+WHERE article = 'tank top';
+```
+
+```sql
+DELETE FROM shirts;
+```
+
+```sql
+DROP TABLE shirts;
+```
