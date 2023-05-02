@@ -762,18 +762,211 @@ CREATE TABLE employees (
 
 ## Section 5: CRUD Basics
 
-## Section 6: CRUD Challenge
+##### `Originally Started & Completed: 04/29/2023`
 
-## Section 7: String Functions
+### Section Introduction
 
+In this section we will learn how to implement **CRUD** operators with MySQL.
+
+### Introducing CRUD
+
+**CRUD** is an acronym (not specific to SQL):
+
+**C**reate
+**R**ead
+**U**pdate
+**D**elete
+
+These are operators we will often do on rows of data.
+
+We've already seen how to **create** individual rows using `INSERT INTO`. We've also seen that we can insert multiple rows at once.
+
+### Getting Our New Dataset
+
+To make working in this section easier, we will get a new set of data to practice what we learn on. Delete any old cats tables and create a new one:
+
+```sql
+CREATE TABLE cats (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(100),
+  breed VARCHAR(100),
+  age INT
+);
+
+INSERT INTO cats(name, breed, age)
+VALUES ('Ringo', 'Tabby', 4),
+       ('Cindy', 'Maine Coon', 10),
+       ('Dumbledore', 'Maine Coon', 11),
+       ('Egg', 'Persian', 4),
+       ('Misty', 'Tabby', 13),
+       ('George Michael', 'Ragdoll', 9),
+       ('Jackson', 'Sphynx', 7);
 ```
 
+### Officially Introducing SELECT
+
+For the **Read** part of CRUD: How do we retrieve and search data already in a table?
+
+We've already been quickly introduced to the answer: `SELECT`!
+
+So far we have only seen how to select every column for every row from a table with:
+
+```sql
+SELECT * FROM <table>;
 ```
 
+The `*` is what lets SQL know we want every column and every row. But we can refine our reads further. We do so with **SELECT Expressions** (what columns do we want?), which can be more than just `*`:
+
+```sql
+SELECT <column_name> from <table>;
 ```
 
+### The WHERE Clause
+
+`WHERE` allows us to narrow down the rows we are working with.
+
+- Not just limited to being used with `SELECT`
+
+**Example**
+
+```sql
+SELECT * FROM cats WHERE age = 4;
+SELECT * FROM cats WHERE name = 'Tonks';
 ```
 
+### Rapid Fire Exercises
+
+1. Select the cat ID for all rows:
+
+```sql
+SELECT cat_id FROM cats;
 ```
 
+2. Select the name and breed for all rows:
+
+```sql
+SELECT name, breed FROM cats;
+```
+
+3. Select just the Tabby cats:
+
+```sql
+SELECT name, age FROM cats WHERE breed = 'Tabby';
+```
+
+4. Select the cat ID and ages for cats that have the same ID as their age:
+
+```sql
+SELECT cat_id, age FROM cats WHERE cat_id = age;
+```
+
+### Aliases
+
+We can rename columns using an _alias_, using the `AS` keyword.
+
+**Example**
+
+```sql
+SELECT cat_id AS id FROM cats;
+SELECT name as cat_name FROM cats;
+```
+
+### Using UPDATE
+
+How do we alter existing data? We make use of the `UPDATE` keyword!
+
+```sql
+UPDATE <table>
+SET <column> = <new_value>
+WHERE <condition>
+```
+
+**Example**
+
+```sql
+UPDATE cats
+SET breed = 'Shorthair'
+WHERE breed = 'Tabby';
+```
+
+**Note:** We had to specify the `WHERE` in order to be more precise with our update. Otherwise, every row would receive the update!
+
+We can do multiple updates at once. The following will do an update on two columns at once, for every row:
+
+```sql
+UPDATE employees
+SET current_status = 'Fired', last_name = 'Who Cares?';
+```
+
+### A Quick Rule of Thumb
+
+Try SELECTing before you UPDATE! This allows you to see if your target for the updating is what you actually want and expect.
+
+### UPDATE Exercise
+
+**Exercise**
+
+1. Change Jackson's name to 'Jack'
+2. Change Ringo's breed to 'British Shorthair'
+3. Update both Main Coons' ages to be 12
+
+**Solution**
+
+```sql
+UPDATE cats
+SET name = 'Jack'
+WHERE name = 'Jackson';
+```
+
+```sql
+UPDATE cats
+SET breed = 'British Shorthair'
+WHERE name = 'Ringo';
+```
+
+```sql
+UPDATE cats
+SET age = 12
+WHERE breed = 'Main Coon';
+```
+
+### Introducing DELETE
+
+Time for the D in CRUD: Delete! This will remove the specified row(s) from the table:
+
+```sql
+DELETE FROM <table> WHERE <condition>
+```
+
+Note we _could_ leave out the `WHERE` from a `DELETE`, but that would delete all rows, leaving us with an empty table!
+
+**Example**
+
+```sql
+DELETE FROM cats
+WHERE name = 'Egg';
+```
+
+### DELETE Exercise
+
+**Exercise**
+
+1. Delete all 4 year old cats
+2. Delete cats whose age is the same as their ID
+3. Delete all cats 🙀
+
+**Solution**
+
+```sql
+DELETE FROM cats
+WHERE age = 4;
+```
+
+```sql
+DELETE FROM cats
+WHERE age = cat_id;
+```
+
+```sql
+DELETE FROM cats;
 ```
