@@ -1133,3 +1133,324 @@ DELETE FROM shirts;
 ```sql
 DROP TABLE shirts;
 ```
+
+## Section 7: String Functions
+
+##### `Originally Started: 05/01/2023, Originally Completed: 5/04/2023`
+
+### Section Introduction
+
+In this section we will explore some of the operations we can perform on string data. We will do so on a books database that we create.
+
+### The World of String Functions
+
+These are built-in operators that we can perform on text columns. There are LOTS!
+
+### Loading Our Books Data
+
+We will load up our books table by running the provided SQL file.
+
+From within the MySQL shell, we can run the following to execute an SQL file:
+
+```
+source file_name.sql
+```
+
+### CONCAT
+
+Short for concatenate, the `CONCAT` function combines strings together.
+
+While we would typically concatenate data we retrieve from our table, we can also do so on hard-coded pieces of text:
+
+```sql
+SELECT CONCAT('H', 'e', 'l', 'l', 'o');
+-- Result: Hello
+```
+
+A more practical example, using our books table:
+
+```sql
+SELECT CONCAT(author_fname, ' ', author_lname)
+FROM books;
+```
+
+This will produce a column with the title 'CONCAT(author_fname, ' ', author_lname)', which is not very useful. Typically we rename the result of a CONCAT:
+
+```sql
+SELECT CONCAT(author_fname, ' ', author_lname) AS author_name
+FROM books;
+```
+
+We can also use the variant `CONCAT_WS` (concatenation with separator). It is similar to the above concatenate method, but we provide the character we want to use as the separator as the first argument. For example:
+
+```sql
+SELECT CONCAT_WS('!', 'Hi', 'Bye', 'LOL');
+-- Result: Hi!Bye!lol
+```
+
+### SUBSTRING
+
+The `SUBSTRING` (and also `SUBSTR`) methods takes a single larger string and returns a portion of it. There are a few variations on the way we can call it, but the first argument is always the sample string.
+
+In one variant, the next argument is the starting substring index (starting from 1), and the third argument is the desired length. This will return a substring within that index:
+
+```sql
+SELECT SUBSTRING('Hello World', 1, 4);
+-- Result: Hell
+```
+
+We can also provide a single argument after the sample string. This will be the starting index. The resulting substring will be up until the ending of the string:
+
+```sql
+SELECT SUBSTRING('Hello World', 7);
+-- Result: World
+```
+
+We can also use a negative starting index. This will count backward from the end of the string, and then go forward until the end:
+
+```sql
+SELECT SUBSTRING('Hello World', -3);
+-- Result: Wor
+```
+
+In our books table, let's shorten our book titles to only 15 characters:
+
+```sql
+SELECT SUBSTRING(title, 1, 15) FROM books;
+```
+
+There is also a `SUBSTR()` variation; in case you want to save a few keystrokes!
+
+### Combining String Functions
+
+String functions can be easily combined. For example, if we want to shorten our book titles, and have them end with '...', we can do so with:
+
+```sql
+SELECT CONCAT(SUBSTR(title, 1, 10), '...') AS short_title
+FROM books;
+```
+
+And if we want to write each author's name in a `FirstInitial.LastInitial.` format:
+
+```sql
+SELECT CONCAT(SUBSTR(author_fname, 1, 1), '.', SUBSTR(author_lname, 1, 1), '.')) AS author_initials
+FROM books;
+```
+
+In other words, just like most programming languages, we can pass the result of one function to another.
+
+### Sidenote: SQL Formatting
+
+Although SQL does not care about how we format our code, most editors will have functionality to format pleasantly.
+
+### REPLACE
+
+Replace parts of a string with the `REPLACE` function.
+
+```sql
+REPLACE(str, from_str, to_str);
+```
+
+**Example:**
+
+```sql
+SELECT REPLACE('Hello World', 'Hell', '%$#@');
+-- Output: %$#@o World
+
+SELECT REPLACE('cheese bread coffee milk', ' ', ' and ');
+-- Output: cheese and bread and coffee and milk
+```
+
+```sql
+SELECT REPLACE(title, ' ', '-')
+FROM books;
+-- Output: Our book names with hyphens in between each word of the title
+```
+
+### REVERSE
+
+To reverse a string, we can use the `REVERSE` function.
+
+```sql
+SELECT REVERSE ('Hello World');
+-- Output: 'dlroW olleH'
+```
+
+### CHAR_LENGTH
+
+To count the characters in a string, we can use the `CHAR_LENGTH` function.
+
+```sql
+SELECT CHAR_LENGTH('Hello');
+-- Output: 5
+```
+
+```sql
+SELECT CHAR_LENGTH(title) FROM books;
+```
+
+**Note:** Don't confuse this function with `LENGTH(str)`, which measures the length of the string _measured in bytes_. Although sometimes they produce the same results, this is not always the case.
+
+### UPPER & LOWER
+
+To change an entire string's case, we can use `UPPER` and `LOWER`. We can also use their alias forms, `UCASE` and `LCASE`.
+
+```sql
+SELECT UPPER('Hello'); -- 'hello'
+SELECT UCASE('Hello'); -- 'hello'
+
+SELECT LOWER('Hello'); -- 'HELLO'
+SELECT LCASE('Hello'); -- 'HELLO'
+```
+
+```sql
+SELECT CONCAT('I LOVE ', UPPER(title), ' !!!')
+FROM books; -- 'I LOVE <book_name> !!!'
+```
+
+### Other String Functions
+
+While there are many string functions in SQL, the following are some of the more useful ones.
+
+`INSERT`:
+
+```sql
+INSERT(str, pos, len, newstr)
+```
+
+Insert some substring into another string. Returns the string str, with the substring beginning at position pos and len characters long replaced by the string newstr. Returns the original string if pos is not within the length of the string. Replaces the rest of the string from position pos if len is not within the length of the rest of the string. Returns NULL if any argument is NULL.
+
+**Example**
+
+```sql
+SELECT INSERT('Hello Bobby', 6, 0, ' There');
+-- 'Hello There Bobby'
+
+SELECT INSERT('Hello Bobby', 6, 4, ' There');
+-- 'Hello Thereby'
+```
+
+`LEFT`:
+
+```sql
+LEFT(str, len)
+```
+
+Returns the leftmost _len_ characters from the string _str_, or _NULL_ if any argument is _NULL_.
+**Example**
+
+```sql
+SELECT LEFT('foobarbar', 5);
+-- 'fooba'
+```
+
+`RIGHT`:
+
+```sql
+RIGHT(str, len)
+```
+
+Returns the rightmost _len_ characters from the string _str_, or _NULL_ if any argument is _NULL_.
+**Example**
+
+```sql
+SELECT RIGHT('foobarbar', 5);
+-- 'arbar'
+```
+
+`REPEAT`:
+
+```sql
+REPEAT(str, count)
+```
+
+Returns a string consisting of string _str_ repeated _count_ times. If _count_ is less than 1, returns an empty string. Returns _NULL_ if _str_ or _count_ is _NULL_.
+
+```sql
+SELECT REPEAT('MySQL', 3);
+-- 'MySQLMySQLMySQL'
+```
+
+`TRIM`:
+
+```sql
+TRIM([{BOTH | LEADING | TRAILING} [remstr] FROM] str), TRIM([remstr FROM] str)
+```
+
+Returns the string _str_ with all _remstr_ prefixes or suffixes removed. If none of the specifiers BOTH, LEADING, or TRAILING is given, BOTH is assumed. _remstr_ is optional and, if not specified, spaces are removed
+
+```sql
+SELECT TRIM('    Hello World  '); -- 'Hello World'
+SELECT TRIM(LEADING '.' FROM '...San Antonio..'); -- 'San Antonio..'
+SELECT TRIM(TRAILER '.' FROM '...San Antonio..'); -- '...San Antonio'
+SELECT TRIM(BOTH '.' FROM '...San Antonio..'); -- 'San Antonio'
+```
+
+### String Functions Exercise
+
+**Exercise**
+
+1. Reverse and Uppercase the following sentence: 'Why does my cat look at me with such hatred?'
+2. What does this print out: `SELECT REPLACE(CONCAT('I', ' ', 'like', ' ', 'cats'), ' ', '-');`
+3. Replace spaces in our book titles with '->', and name the generated column as title.
+4. Print the last name of every author in a column called 'forwards', and the reverse of their last name in a column called 'backwards'.
+5. Print out the author's full name in all capitals.
+6. Print out the following for each book: `<title> was released in <release_year>`.
+7. Print book titles and the length of each title. Call the length character_count.
+8. Generate the first 10 characters of each book title followed by '...' in a column called short title. Then print out the last name of an author, followed by a comma, followed by their first name in a column called author. Finally, in a column called stock print out the sentence `<stock_quantity> in stock `for each book.
+
+**Solution**
+
+1.
+
+```sql
+SELECT REVERSE(UPPER('Why does my cat look at me with such hatred?'));
+```
+
+2. The result of the following MySQL code is **'I-like-cats'**.
+
+```sql
+SELECT REPLACE(CONCAT('I', ' ', 'like', ' ', 'cats'), ' ', '-');
+```
+
+3.
+
+```sql
+SELECT REPLACE(title, ' ', '->') AS title
+FROM books;
+```
+
+4.
+
+```sql
+SELECT author_lname AS forwards, REVERSE(author_lname) AS backwards
+FROM books;
+```
+
+5.
+
+```sql
+SELECT UPPER(CONCAT(author_fname, ' ', author_lname)) AS 'full name in caps'
+FROM books;
+```
+
+6.
+
+```sql
+SELECT CONCAT(title, ' was released in ', released_year) AS blurb
+FROM books;
+```
+
+7.
+
+```sql
+SELECT title, CHAR_LENGTH(title) AS character_count
+FROM books;
+```
+
+8.
+
+```sql
+SELECT CONCAT(SUBSTR(title, 1, 10), REPEAT('.', 3)) AS short_title, CONCAT_WS(',', author_lname, author_fname) AS author, CONCAT(stock_quantity, ' in stock') AS quantity
+FROM books;
+```
