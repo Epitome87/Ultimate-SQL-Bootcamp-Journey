@@ -1454,3 +1454,235 @@ FROM books;
 SELECT CONCAT(SUBSTR(title, 1, 10), REPEAT('.', 3)) AS short_title, CONCAT_WS(',', author_lname, author_fname) AS author, CONCAT(stock_quantity, ' in stock') AS quantity
 FROM books;
 ```
+
+## Section 8: Refining Selections
+
+##### `Originally Started: 05/04/2023, Originally Completed: 5/05/2023`
+
+### Section Introduction
+
+This section will focus on some more features that help us narrow/refine our selections. For example, limiting the number of results we get back, sorting our results, ensuring we only get unique results, and more!
+
+### DISTINCT
+
+We can use `DISTINCT` to eliminate duplicate results from queries.
+
+```SQL
+SELECT DISTINCT author_lname FROM books;
+-- Returns only rows with unique author last names
+```
+
+How would we choose distinct author full names? One way might be making use of the CONCAT method:
+
+```sql
+SELECT DISTINCT CONCAT(author_fname, ', ', author_lname) FROM books;
+```
+
+But we can achieve identical results doing the following:
+
+```sql
+SELECT DISTINCT author_fname, author_lname FROM books;
+```
+
+The above selection is retrieving all rows where the first name AND last name are unique.
+
+**Remember:** DISTINCT goes _after_ SELECT and _before_ the column name.
+
+### ORDER BY
+
+We can sort our results using `ORDER BY`.
+
+```sql
+SELECT book_id, author_fname, author_lname
+FROM books
+ORDER BY author_lname;
+-- Results: All books, ordered by author's last name in ascending order
+```
+
+By default, we sort in **ascending** order. But we can change that using the `DESC` keyword (here standing for **descending**, rather than **describe** when using the `DESC <table>` command).
+
+```sql
+SELECT title, pages
+FROM books
+ORDER BY pages DESC;
+-- Results: All books, ordered by page count in descending order
+```
+
+### More On ORDER BY
+
+**Shorthand Syntax**
+
+There is also a shorthand syntax for `ORDER BY` where we specify what column number we wish to base our sorting off of:
+
+```sql
+SELECT title, author_fname, author_lname
+FROM books
+ORDER BY 2;
+-- Order the results by the 2nd SELECT column, author_fname.
+```
+
+Note that the column number we specify is that number column written in the SELECT statement, not the one we may see presented via the `DESC <table>` command.
+
+Although this shorthand syntax might be a little less typing, it tends to take more time to read and understand.
+
+**Multiple Sorting**
+
+We can also order by multiple columns. In this context, we will do the initial sorting by the first ORDER BY column, and then for any rows with identical results we will further sort by the next ORDER BY column:
+
+```sql
+SELECT author_lname, released_year, title
+FROM books
+ORDER by author_lname, released_year;
+-- Books ordered by their author's last name in ascending order
+-- For books with identical author last names, we then sort those by the release year
+```
+
+We can also order by columns that aren't part of the table, but rather results we've asked SQL for:
+
+```sql
+SELECT CONCAT(author_fname, ' ', author_lname) AS author
+FROM books
+ORDER BY author;
+```
+
+In the above query, we are ordering by a calculated column that isn't actually part of the table; it is one we have created by concatenating the author's first and last name together.
+
+### LIMIT
+
+We can control the number of results we get back with `LIMIT`. Typically, this isn't that useful unless we are also sorting. For example, if we want to limit our selection to 5, what does that really mean? We would just be selecting the first 5 results in the order they were inserted into the table, which does not have any useful meaning.
+
+```sql
+SELECT title, released_year FROM books
+ORDER BY released_year DESC LIMIT 5;
+-- Select the five latest-released books
+```
+
+We can also specify a range:
+
+```sql
+LIMIT <starting_row>, <count>
+```
+
+For example:
+
+```sql
+SELECT title, released_year FROM books
+ORDER BY released_year DESC LIMIT 1, 4;
+-- Select the four latest-released books, from the 2nd book to the 5th.
+```
+
+In the above query, we are saying start at row 1 (which is the 2nd row, as they are 0-indexed) and go for 4 results.
+
+**Note:** If we specify a limit that is above the number of rows in the table, the result will simply be all the rows possible.
+
+### LIKE
+
+To help us perform basic searching, we can make use of the `LIKE` operator.
+
+**Example**
+
+```sql
+WHERE author_fname LIKE '%da%'
+```
+
+Here, `%` is an example of a **wild card**. In the above, the `%` means _any number of characters_ (0 or more). So we want any number of characters, followed by the string literal 'da', followed by any number of characters. This will return any author where the first name has 'da' anywhere in it, such as 'David', 'Dave', 'Dan', 'Freida'.
+
+Another wild card is the `_`. It means _exactly one character_.
+
+```sql
+SELECT * FROM books
+WHERE author_fname LIKE '____';
+-- Result: All books where the author's first name is 4 characters long.
+
+SELECT * FROM books
+WHERE author_fname LIKE '_a_';
+-- Result: All books where the author's first name starts with any character, is followed by an 'a', and then any other character. Note the name must only be 3 characters long.
+
+SELECT * FROM books
+WHERE author_fname LIKE '%n';
+-- All books where the author's first name ends with an 'n'.
+```
+
+### Escaping Wildcards
+
+What if one of the characters I want to match is one of the wild card characters? For example, a book title has a '%' character in the title? We can escape it the character with a backslash (`\`):
+
+```sql
+SELECT * FROM books
+WHERE title LIKE '%\%%';
+-- Result: Books with a percentage sign anywhere in the title
+
+SELECT * FROM books
+WHERE title LIKE '%\_%';
+-- Result: Books with an underscore anywhere in the title
+```
+
+### Refining Selections Exercise
+
+**Exercise**
+
+1. Select all story collections (titles that contain 'stories' in the title)
+2. Find the longest book. Print out the title and page count
+3. Print a summary containing the title and year for the 3 most recent books. Format it `<title> - <released_year>` in a column called summary
+4. Find all books with an author last name that contains a space.
+5. Find the 3 books with the lowest stock. Select title, year and stock
+6. Print title and author last name, sorted by author last name, and then by title
+7. Sort alphabetically by last name. For each book print out `MY FAVORITE AUTHOR IS <author_full_name>!`
+
+**Solution**
+
+1.
+
+```sql
+SELECT title
+FROM books
+WHERE title LIKE '%stories%';
+```
+
+2.
+
+```sql
+SELECT title, pages
+FROM books
+ORDER BY pages DESC LIMIT 1;
+```
+
+3.
+
+```sql
+SELECT CONCAT_WS(' - ', title, released_year) AS summary
+FROM books
+ORDER BY released_year DESC LIMIT 3;
+```
+
+4.
+
+```sql
+SELECT title, author_lname
+FROM books
+WHERE author_lname LIKE '% %';
+```
+
+5.
+
+```sql
+SELECT title, released_year, stock_quantity
+FROM books
+ORDER BY stock_quantity LIMIT 3;
+```
+
+6.
+
+```sql
+SELECT title, author_lname
+FROM books
+ORDER BY author_lname, title;
+```
+
+7.
+
+```sql
+SELECT UPPER(CONCAT('My favorite author is ', author_fname, ' ', author_lname)) AS yell
+FROM books
+ORDER BY author_lname;
+```
