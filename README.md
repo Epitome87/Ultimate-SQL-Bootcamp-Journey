@@ -1686,3 +1686,309 @@ SELECT UPPER(CONCAT('My favorite author is ', author_fname, ' ', author_lname)) 
 FROM books
 ORDER BY author_lname;
 ```
+
+## Section 9: Aggregate Functions
+
+##### `Originally Started: 05/05/2023, Originally Completed: 05/05/2023`
+
+### Section Introduction
+
+In this section, we will explore different ways to perform analysis on data (averages, counting, summing, grouping, average quantities per book author, etc).
+
+### Count Basics
+
+An **Aggregate Function** is a function that can operatore on multiple rows or multiple pieces of data at once. The first one we will explore is the `COUNT` function.
+
+```sql
+SELECT COUNT(*) FROM books;
+-- Result: Count the number of rows we get back from books
+```
+
+**Note:** Since when we use `COUNT` we are boiling the whole result down into a single value. When we do a normal selection, we are asking for a bunch of rows. These two concepts do not work together (easily), so we are unable to combine them when using an aggregate function.
+
+How many author last names are there?
+
+```sql
+SELECT COUNT(author_lname) FROM books;
+```
+
+If we were to have any NULL first names, the count would not include them. More often than not, we probably really want to know how many _distinct_ author last names there are:
+
+```sql
+SELECT COUNT(DISTINCT author_lname) FROM books;
+```
+
+How many titles contain "the" in them?
+
+```sql
+SELECT COUNT(*) FROM books
+WHERE title LIKE '%the%';
+```
+
+### GROUP BY
+
+One of the more important (and confusing) concepts in MySQL. `GROUP BY` summarizes or aggregates identical data into single rows.
+
+```sql
+SELECT author_lname FROM books
+GROUP BY author_lname;
+-- Result: A column of each author, appearing only once.
+-- Behind the scenes: Makes a group where all of author "Lahiri" are together, another where all of author "Gaiman" are together, etc.
+```
+
+While not particularly useful on its own, we can now ask questions / query things about those individual behind-the-scenes groups.
+
+Count how many books each author has written:
+
+```sql
+SELECT author_lname, COUNT(*)
+FROM books
+GROUP BY author_lname;
+```
+
+In the above, `COUNT(*)` runs on _each group_, so we are counting the number of books of each individual author grouping -- not the number of total books from all authors. The result would look something like:
+
+| author_lname | COUNT(\*) |
+| ------------ | --------- |
+| Lahiri       | 2         |
+| Gaiman       | 2         |
+| Eggers       | 1         |
+
+Generally, when we make our groupings, we then make use of some aggregate function. Doing the following would **NOT** be valid:
+
+```sql
+-- Invalid MySQL!
+SELECT * FROM books
+GROUP BY author_lname;
+```
+
+We are grouping based off of the author's last name, but then we are asking for _every_ column to be selected. How do we select a release year, title, etc when we have more than one of each of those? For example, author with last name "Lahiri" has two books; which title, which release year, etc should we display for the _one_ row in the "Lahiri" group? There is no way of knowing, and thus there is a conflict! We can only select any of the columns that we are groupoing by.
+
+```sql
+-- Valid: We are only selecting the column that is being used to form the groupings
+SELECT author_lname, COUNT(*)
+FROM books GROUP BY author_lname;
+```
+
+### MIN and MAX Basics
+
+To help us find the minimum value in a column, we can use the `MIN` aggregate function. Similarly, to help us find the maximum value in a column, we can use the `MAX` aggregate function. We can also use these functions to find the min/max within _groups_.
+
+**Without GROUP BY**
+
+Find the minimum release year:
+
+```sql
+SELECT MIN(released_year)
+FROM books;
+```
+
+Find the longest book:
+
+```sql
+SELECT MAX(pages)
+FROM books;
+```
+
+We can use `MIN` and `MAX` on text as well. We can also do multiple calls to aggregate functions at once. For example, to find the author whose last name comes earliest in the alphabet, as well as the one whose last name comes latest in the alphabet:
+
+```sql
+SELECT MIN(author_lname) AS first, MAX(author_lname) last
+FROM books;
+```
+
+Result:
+
+| first  | last      |
+| ------ | --------- |
+| Carver | Steinbeck |
+
+But how do we find which book that release year belongs to? The title of the longest book? So far we only know what the earliest release year _is_, what the longest book length _is_ -- not its associated data. We _cannot_ do the following:
+
+```sql
+-- Invalid! When we aggregate things, we can only work with the data they have in common
+SELECT MAX(pages), title
+FROM books;
+```
+
+So how do we solve this issue?
+
+### Subqueries
+
+To solve the previous problem, one solution could be to make use of `ORDER BY`:
+
+```sql
+SELECT title, pages
+FROM books
+ORDER BY pages DESC LIMIT 1;
+```
+
+But that solution is simply taking a different approach to answer the question of which book has the highest page count. To actually solve this issue while still making us of aggregate functions, we make use of **subqueries**. It is a **query within a larger query**. We **surround it with parenthesis**, letting MySQL know to evaluate that subquery first.
+
+```sql
+SELECT * FROM books
+WHERE pages = (SELECT MIN(pages) FROM books);
+-- Result: The subquery (SELECT MIN(pages) FROM books) is ran first, resulting in 163
+-- So we select * FROM books WHERE pages = 163
+```
+
+**Note:** The above two ways to find the book with the largest page count are _not_ identical! While the sub-query method will return _all_ books that share the same highest page count, the method using LIMIT 1 will, naturally, present only one result.
+
+Let's find the title of the earliest released book:
+
+```sql
+SELECT title, released_date FROM books
+WHERE released_date = (SELECT MIN(released_date) FROM books);
+```
+
+### Grouping by Multiple Columns
+
+We can also group by multiple columns. Remember, we have authors that share the same last name (but not first name). So when we group by just last name, we are seeing the result of, for example, 'Harris'. The aggregation we do on this group is for 'Dan Harris' and 'Freida Harris'. If we want to treat them as separate authors, we can further group by their first name as well:
+
+```sql
+SELECT author_lname, COUNT(*)
+FROM books
+GROUP BY author_lname, author_fname;
+```
+
+### MIN and MAX With GROUP BY
+
+We aren't limited to using `MIN` and `MAX` on their own; we can also use them with `GROUP BY` so they perform logic _on each group_.
+
+Find the year each author published their first book:
+
+```sql
+SELECT author_fname, author_lname, MIN(released_year) AS first_release
+FROM books
+GROUP BY author_lname, author_fname;
+```
+
+Let's find their first published year, latest published year, longest book, and number of books written:
+
+```sql
+SELECT
+  author_lname,
+  author_fname,
+  COUNT(*) AS books_written,
+  MAX(released_year) AS latest_release,
+  MIN(released_year) AS earliest_release,
+  MAX(pages) AS longest_book
+FROM books GROUP BY author_lname, author_fname;
+```
+
+### SUM
+
+We can add things up with the `SUM` aggregate function. We can make it operate on the entire table, or on a group-by-group basis.
+
+Total page count of our entire book table:
+
+```sql
+SELECT SUM(pages) FROM books;
+```
+
+Total page count of each author's works:
+
+```sql
+SELECT author_lname, SUM(pages)
+FROM books ORDER BY author_lname;
+```
+
+### AVG
+
+We can also **find the average** using `AVG`. It works similar to the other aggregate functions. We can find the average across all rows in a data set, or we can group and then find averages.
+
+Calculate the average release year across all books:
+
+```sql
+SELECT AVG(released_year)
+FROM books;
+```
+
+Calculate the average release year across an author's books:
+
+```sql
+SELECT author_lname, AVG(released_year)
+FROM books
+ORDER BY author_lname;
+```
+
+Calculate the average stock quantity for books released in the same year:
+
+```sql
+SELECT released_year, AVG(stock_quantity)
+FROM books
+ORDER BY released_year;
+```
+
+### Aggregate Functions Docs
+
+Visit the official MySQL docs for many, many more aggregate functions!
+
+### Aggregate Functions Exercise
+
+**Exercise**
+
+1. Print the number of books in the database
+2. Print out how many books were released in each year
+3. Print out the total number of books in stock
+4. Find the average release year for each author
+5. Find the full name of the author who wrote the longest book
+6. Retrieve a table sorted by release year (ascending), listing the number of books released that year, and the average page count of all the books in that year
+
+**Solution**
+
+1.
+
+```sql
+SELECT COUNT(*) FROM books;
+```
+
+2.
+
+```sql
+SELECT released_year, COUNT(*)
+FROM books
+GROUP BY released_year;
+```
+
+3.
+
+```sql
+SELECT SUM(stock_quantity)
+FROM books;
+```
+
+4.
+
+```sql
+SELECT author_fname, author_lname, AVG(released_year)
+FROM books
+GROUP BY author_fname, author_lname;
+```
+
+5.
+
+Without aggregation:
+
+```sql
+SELECT CONCAT_WS(' ', author_fname, author_lname) AS author
+FROM books
+ORDER BY pages DESC LIMIT 1;
+```
+
+With aggregation:
+
+```sql
+SELECT CONCAT_WS(' ', author_fname, author_lname) AS author
+FROM books
+WHERE pages = (SELECT MAX(pages) FROM books);
+```
+
+6.
+
+```sql
+SELECT released_year AS year, COUNT(*) AS '# books', AVG(pages) AS 'avg pages'
+FROM books
+GROUP BY released_year
+ORDER BY released_year;
+```
