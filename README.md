@@ -1992,3 +1992,189 @@ FROM books
 GROUP BY released_year
 ORDER BY released_year;
 ```
+
+## Section 10: Revisiting Data Types
+
+##### `Originally Started: 05/05/2023, Originally Completed: TBD`
+
+### Section Introduction
+
+How do we store currency? Dates? Times? These won't neatly fit into VARCHAR or INT, the two data types we have learned thus far. We'll explore more complex data types throughout this section.
+
+### Surveying Other Data Types
+
+There are _way_ more data types than we have seen so far. A lot are rather niche, and a lot are very similar to one another. Most can be categorized as Numeric, Date and Time, String, Spatial, and JSON data types.
+
+We will focus on some of the more common data types.
+
+### CHAR vs VARCHAR
+
+To store text data, we have already seen VARCHAR. There is also `CHAR`. How does it differ from VARCHAR?
+
+VARCHAR allows us to specify a maximum length. It is optimized to store texts of different sizes. But if we are working with data where there is not much variance between character length, CHAR shines! **CHAR has a fixed length**.
+
+```sql
+CREATE TABLE states (
+  abbr CHAR(2)
+);
+
+INSERT INTO states (abbr)
+VALUES ('CA'), ('NY'), ('X');
+```
+
+In the above table, we are using a fixed character length of 2 to store abbreviations. For values that are less than two characters, MySQL will add padding. However, when we select that data, we will never notice that it is being padded _behind the scenes_.
+
+The downside of using a fixed length using CHAR is it is really only optimized to deal with data thats exactly the fixed length you specify. When it stores data of smaller length, we are having some storage go to waste; it stores all characters (padded or not padded) as the same number of bytes.
+
+- `CHAR` is faster for fixed length text
+  - State abbreviations: CA, NY
+  - Yes/No flags: Y/N
+  - Zip codes: 59715, 94924
+- Otherwise, typically prefer `VARCHAR`!
+
+| Value  | Char(4) | Storage | Varchar(4) | Storage |
+| ------ | ------- | ------- | ---------- | ------- |
+| ' '    | ' '     | 4 bytes | ''         | 1 byte  |
+| 'ab'   | 'ab '   | 4 bytes | 'ab'       | 3 bytes |
+| 'abcd' | 'abcd'  | 4 bytes | 'abcd'     | 5 bytes |
+
+### INT, TINYINT, BIGINT, Etc!
+
+The difference between the various integer types boil down to how large of an integer you can store.
+
+| Type      | Bytes | Min Value Signed | Min Value Unsigned | Max Value Signed | Max Unsigned |
+| --------- | ----- | ---------------- | ------------------ | ---------------- | ------------ |
+| TINYINT   | 1     | -128             | 0                  | 127              | 255          |
+| SMALLINT  | 2     | -32768           | 0                  | 32767            | 65535        |
+| MEDIUMINT | 3     | -8388608         | 0                  | 8388607          | 16777215     |
+| INT       | 4     | -2,147,483,648   | 0                  | 2,147,483,647    | 4294967295   |
+| BIGINT    | 8     | -2^63            | 0                  | 2^63 - 1         | 2^64 - 1     |
+
+By default we are working with **signed integers**. To work with **unsigned integers** we make use of `UNSIGNED` keyword after specifying our integer data type:
+
+```sql
+CREATE TABLE parent (
+  children TINYINT UNSIGNED)
+);
+```
+
+Unsigned integers cannot store negative values, which effectively doubles their positive range.
+
+### DECIMAL
+
+If we try inserting a decimal number into an INT data type, we do not get an error thrown. We get the value stored rounded to the nearest integer. For numbers that are not whole, we can use a `DECIMAL` data type. This allows us to store precise numbers.
+
+`DECIMAL(maxTotalDigits, digitsAfterDecimal)`
+
+For example, `DECIMAL(5, 2)` can store a maximum number of 999.99 (5 digits total, 2 being after the decimal). If we store a number that has too many significant digits (left of decimal), we will get an error, and the data will not be inserted into the table. However, if we insert a number that has too many digits to the right of the decimal, we only get a warning, and the value is stored rounded to the last valid digit (2 in the case of `DECIMAL(5, 2)`).
+
+### FLOAT & DOUBLE
+
+There are other ways to store decimal numbers: FLOAT and DOUBLE
+
+- Decimal is the most precise
+- We can store larger numbers using less space using float and double
+  - But at the cost of precision!
+
+| Data Type | Memory Needed | Precision Issues |
+| --------- | ------------- | ---------------- |
+| FLOAT     | 4 Bytes       | ~7 digits        |
+| DOUBLE    | 8 Bytes       | ~15 digits       |
+
+Typically, the better speed and okay-enough precision of DOUBLE tends to be good enough for most scenarios.
+
+### DATE and TIME
+
+`DATE`: Values with a Date, but no Time
+
+- Format: 'YYYY-MM-DD'
+
+`TIME`: Values with a Time, but no Date
+
+- Can represent the time of the day, like 13:01 in the morning
+- Can represent the amount/interval of time
+- Format: 'HH:MM:SS'
+- Range: '-838:59:59' to '838:59:59'
+
+`DATETIME`: Values with a Date AND Time
+Format: 'YYYY-MM-DD HH:MM:SS'
+
+### Working with Dates
+
+```sql
+CREATE TABLE people (
+  name VARCHAR(100),
+  birthdate DATE,
+  birthtime TIME,
+  birthdatetime DATETIME
+);
+INSERT INTO people (name, birthdate, birthtime, birthdatetime)
+VALUES
+  ('Elton', '2000-12-25', '11:02:00', '2000-12-25 11:02:00'),
+  ('Lulu', '1985-04-11', '9:45:10', '1985-12-25 9:45:10'),
+  ('Juan', '2020-08-15', '23:59:00', '2020-08-15 23:59:00');
+```
+
+### CURDATE, CURTIME and NOW
+
+We can get the current date and time dynamically, without having to manually type it out.
+
+`CURRENT_DATE()`, `CURRENT_TIME()`, or their shorthands `CURDATE()` and `CURTIME()`. We also have access to `NOW()`, the shorthand for `CURRENT_TIMESTAMP()`.
+
+```sql
+SELECT CURTIME();
+-- Result: The current Time
+```
+
+```sql
+SELECT CURDATE();
+-- Result: The current Date
+```
+
+```sql
+SELECT NOW();
+-- Result: Current DateTime
+```
+
+```sql
+INSERT INTO people (name, birthdate, birthtime, birthdatetime)
+VALUES ('Hazel', CURDATE(), CURTIME(), NOW());
+```
+
+### Date Functions
+
+There are many Date functions available for use. We will focus on the ones that format dates or extract a portion of it into a different format.
+
+**DAY**
+
+Synonym for `DAYOFMONTH(date)`, we can use the `DAY(date)` function to return the day of the month for the given date:
+
+```sql
+SELECT birthdate, DAY(birthdate) FROM people;
+```
+
+**DAYOFWEEK**
+
+We can use `DAYOFWEEK(date)` to return the weekday index for date. An index of 1 is Sunday, 2 is Monday, etc, with 7 being Saturday:
+
+```sql
+SELECT birthdate, DAYOFWEEK(birthdate) FROM people;
+```
+
+**DAYOFYEAR**
+
+`DAYOFYEAR(date)` returns the day of the year for date, in the range of 1 to 366.
+
+**MONTHNAME**
+
+To return the name of the month, makeu se of `MONTHNAME(date)`. Return values are 'January', 'February',...'December'.
+
+Values of type `DATE` _and_ `DATETIME` will work with the above functions:
+
+```sql
+-- Below is all good!
+SELECT name, birthdatetime, YEAR(birthdatetime), MONTHNAME(birthdate) FROM people;
+
+-- Below is invalid! Our TIME data does not know of DATE information
+SELECT name, birthdatetime, YEAR(birthtime) FROM people;
+```
