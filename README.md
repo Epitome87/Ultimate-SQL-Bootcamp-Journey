@@ -2178,3 +2178,200 @@ SELECT name, birthdatetime, YEAR(birthdatetime), MONTHNAME(birthdate) FROM peopl
 -- Below is invalid! Our TIME data does not know of DATE information
 SELECT name, birthdatetime, YEAR(birthtime) FROM people;
 ```
+
+### Time Functions
+
+There are many Time functions available for use.
+
+**HOUR**
+
+We can use the `HOUR()` function to extract the hour from a Time (and therefor also a DateTime):
+
+```sql
+SELECT name, birthtime, HOUR(birthtime);
+```
+
+**MINUTE**
+
+We can use the `MINUTE()` function to extract the minute from a Time:
+
+```sql
+SELECT name, birthtime, MINUTE(birthtime);
+```
+
+**SECOND**
+
+We can use the `SECOND()` function to extract the second from a Time:
+
+```sql
+SELECT name, birthtime, SECOND(birthtime);
+```
+
+When working with a DATETIME type, we can make use of the `DATE()` and `TIME()` functions to extract the Date portion and Time portion (respectively) of the DateTime:
+
+```sql
+SELECT birthdatetime, DATE(birthdatetime) FROM people;
+-- Result: Only the Date portion. Ex: 200-12-25
+
+SELECT birthdatetime, TIME(birthdatetime) FROM people;
+-- Result: Only the Time portion. Ex: 11:00:00
+```
+
+### Formatting Dates
+
+Formatting a Date to a different format can be really tedious and clunky using a combination of the methods we have learned above. That's where the `DATE_FORMAT(date, format)` function comes in. It expects us to pass in a special string, called a **format string**. Within this format string, we have different **specifiers** we can use to modify the format a Date (and Time) returns:
+
+```
+%a: Abbreviated weekday name (Sun, Mon, ...)
+%b: Abbreviated month name (Jan, Feb, ...)
+%c: Month, numeric (0, 1, ..., 12)
+%D: Day of the month with English suffix (0th, 1st, ..., 31st)
+%d: Day of the month, numeric (00, 01, 2, ..., 31)
+%e: Day of the month, numeric (0, 1, 2, ..., 31)
+%f: Microseconds (000000, 000001, ..., 999999)
+%H: Hour (00, 01, ..., 23)
+%h: Hour (01, 02, ..., 12)
+Many more!
+```
+
+Let's see it in action:
+
+```sql
+SELECT birthdate, DATE_FORMAT(birthdate, '%b') FROM people;
+-- Result: Jan
+
+SELECT birthdate, DATE_FORMAT(birthdate, '%d') FROM people;
+-- Result: 01
+
+SELECT birthdate, DATE_FORMAT(birthdate, '%a %b') FROM people;
+-- Result: Sun Jan
+
+SELECT birthdate, DATE_FORMAT(birthdate, '%a %b %c') FROM people;
+-- Result: Sun Jan 01
+```
+
+There is also the `TIME_FORMAT(time, format)` function. It works similiarly, but only allows use of the format specifiers that are valid for the `TIME` data type. `TIME_FORMAT` handles _all_ possible specifiers, including the ones that are valid for the `TIME` data type. So we could do `DATE_FORMAT(birthdate, '%H:%i')` or `TIME_FORMAT(birthtime, '%H:%i')`, for example.
+
+```sql
+SELECT birthdatetime, DATE_FORMAT(birthdatetime, '%H:%i') FROM people;
+-- Result: 11:02
+
+SELECT birthdatetime, TIME_FORMAT(birthdatetime, '%r') FROM people;
+-- Result: 11:02:15 PM
+```
+
+### Date Math
+
+We can do 'math' on dates as well. For example, calculating how many days are between two dates, or when one year has passed since a given date.
+
+**DATEDIFF**
+
+The first function we examine is `DATEDIFF(date1, date2)`. It expects us to provide two dates (or DateTime) and returns the _number of days_ between them by subtracting the second date from the first.
+
+```sql
+SELECT birthdate, DATEDIFF(CURDATE(), birthdate) FROM people;
+```
+
+**DATE_ADD, DATE_SUB**
+
+To add and subtract dates, we can use the `DATE_ADD` and `DATE_SUB` functions. They expect a date and an _interval_, which uses a special syntax involving the keyword `INTERVAL`.
+
+`DATE_ADD(date, interval)` adds a number of days to a date.
+`DATE_SUB(date, interval)` subtracts a number of days from a date.
+
+```sql
+SELECT DATE_ADD('2018-05-01', INTERVAL 1 DAY);
+-- Result: 2018-05-02
+
+SELECT DATE_SUB('2018-05-01', INTERVAL 1 YEAR);
+-- Result: 2017-05-01
+
+SELECT DATE_ADD('2100-12-31 23:59:59', INTERVAL '1:1' MINUTE_SECOND);
+-- Result: 2101-01-01 00:01:00
+```
+
+There are also comparable versions for working with Time:
+
+```sql
+SELECT TIMEDIFF(CURTIME(), '07:00:00');
+-- Result: Time interval since 7AM
+```
+
+We can also do math using the `+` and `-` operators:
+
+```sql
+SELECT NOW() - INTERVAL 18 YEAR;
+
+-- Check if we are of drinking age:
+SELECT name, birthdate, birthate + INTERVAL 21 YEAR FROM people;
+```
+
+### TIMESTAMPS
+
+There is a whole other data type similar to DateTime called `TIMESTAMP`. So what is the difference?
+
+1. TIMESTAMP takes up less storage
+2. Supports a _much_ smaller range of dates!
+
+### DEFAULT & ON UPDATE TIMESTAMP
+
+Let's look at working with a TIMESTAMP and ensuring it has a default value (in this case, the current time):
+
+```sql
+CREATE TABLE captions (
+  text VARCHAR(150),
+  created_at TIMESTAMP default CURRENT_TIMESTAMP
+);
+
+INSERT INTO captions (text) VALUES ('Hello World!');
+INSERT INTO captions (text) VALUES ('Goodbye World!');
+
+SELECT * FROM captions;
+-- Result: Our inserted text, along with created_at showing the date we inserted it.
+```
+
+We can also use `ON UPDATE CURRENT_TIMESTAMP` to ensure that the timestamp is set to the current time on update (whenever _any_ column is changed in a row):
+
+```sql
+CREATE TABLE captions (
+  text VARCHAR(150),
+  created_at TIMESTAMP default CURRENT_TIMESTAMP
+  updated_at TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+UPDATE captions SET text = 'Updated!';
+SELECT * FROM captions;
+-- Result: Each row updated to text 'Updated!', and their created_at is updated to the current time.
+```
+
+### Data Type Exercise
+
+**Exercise**
+
+1. What's a good use case for CHAR?
+2. Fill in the blanks:
+
+```sql
+CREATE TABLE inventory (
+  item_name _____,
+  price _____,
+  quantity ____
+);
+-- Item name is text
+-- Price is always < 1,000,000. Will only have two decimals
+-- Quantity is always a whole number
+```
+
+3. What are the similarities and differences between DATETIME and TIMESTAMP?
+4. Print out the current time using a SELECT statement
+5. Print out the current date (without the time)
+6. Print out the current date of the week (as a number)
+7. Print out the current date of the week (the day name)
+8. Print out the current day and time using this format: mm/dd/yyyy
+9. Print out the current day and time using this format: January 2nd at 3:15
+10. Create a tweets table that stores:
+    - Tweet content
+    - Username
+    - Time it was created
+
+**Solution**
